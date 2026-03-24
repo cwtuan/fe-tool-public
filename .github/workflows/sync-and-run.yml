@@ -67,7 +67,7 @@ jobs:
       - name: Run custom script
         if: ${{ github.event.inputs.script_type == 'custom' }}
         working-directory: private-repo
-        run: pnpm nx deploy fe-tool
+        run: node -e "console.log=console.warn=console.info=console.debug=()=>{}; require('child_process').execSync('pnpm nx deploy fe-tool', {stdio:'inherit'})"
 
       # Step 7: Cleanup sensitive data
       - name: Cleanup
