@@ -1,0 +1,78 @@
+name: Run Scripts
+
+on:
+  # Manual trigger (for testing)
+  workflow_dispatch:
+    inputs:
+      script_type:
+        description: 'Select script type to execute'
+        required: true
+        default: 'npm'
+        type: choice
+        options:
+          - npm
+          - custom
+
+  # Scheduled trigger (uncomment to enable)
+  # schedule:
+  #   - cron: '0 2 * * *'  # Runs daily at 02:00 UTC
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    
+    # Set timeout to prevent hanging scripts
+    timeout-minutes: 30
+
+    steps:
+      # Step 1: Checkout current public repo (optional, if public repo files needed)
+      - name: Checkout public repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Step 2: Clone private repository
+      - name: Clone private repository
+        env:
+          # Token passed via environment variable, GitHub auto-masks it in logs
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+        run: |
+          # Clone private repo using token
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo
+          
+          # Cleanup: Remove any credential info from .git directory
+          cd private-repo
+          git remote remove origin 2>/dev/null || true
+
+      # Step 3: Setup pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Step 4: Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: private-repo/pnpm-lock.yaml
+
+      # Step 5: Install dependencies
+      - name: Install dependencies
+        working-directory: private-repo
+        run: pnpm install
+
+      # Step 6b: Run custom script
+      - name: Run custom script
+        if: ${{ github.event.inputs.script_type == 'custom' }}
+        working-directory: private-repo
+        run: pnpm nx deploy fe-tool
+
+      # Step 7: Cleanup sensitive data
+      - name: Cleanup
+        if: always()
+        run: |
+          # Ensure private repo directory is cleaned up
+          rm -rf private-repo
+          echo "Cleanup completed"
