@@ -36,7 +36,7 @@ jobs:
       - name: Authenticate GitHub CLI
         run: gh auth setup-git
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install opencode-ai
         run: |
@@ -45,5 +45,5 @@ jobs:
 
       - name: run opencode-ai
         run: |
-          opencode run "1. update src/App.jsx for new react feature demo 2. create a new branch and create a PR using gh cli such as `gh pr create`"
+          opencode run "1. update src/App.jsx for new react feature simple demo 2. create a new branch and create a PR using gh cli such as `gh pr create`"
 
