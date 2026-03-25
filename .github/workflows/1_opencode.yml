@@ -27,7 +27,6 @@ jobs:
         with:
           node-version: '24'
 
-
       - name: Install opencode-ai
         run: |
           npm i -g opencode-ai
@@ -35,4 +34,5 @@ jobs:
 
       - name: run opencode-ai
         run: |
-          opencode run "update src/App.jsx for new react feature demo"
+          opencode run "1. update src/App.jsx for new react feature demo 2. create a new branch and create a PR"
+
