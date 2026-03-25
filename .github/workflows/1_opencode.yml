@@ -49,4 +49,5 @@ jobs:
       - name: run opencode-ai
         run: |
           opencode run "1. update src/App.jsx for new react feature simple demo 2. create a new branch and create a PR using gh cli such as `gh pr create`"
-
+        env:
+          GH_TOKEN: ${{ github.token }}
