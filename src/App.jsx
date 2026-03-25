@@ -1,43 +1,44 @@
-import { useState } from 'react'
+import { useState, useId } from 'react'
 import './App.css'
 
 function App() {
-  const [todos, setTodos] = useState([])
+  const [items, setItems] = useState([])
   const [input, setInput] = useState('')
+  const id = useId()
 
-  const addTodo = () => {
+  const addItem = () => {
     if (input.trim()) {
-      setTodos([...todos, { text: input, completed: false }])
+      setItems([...items, { id: `${id}-${Date.now()}`, text: input, completed: false }])
       setInput('')
     }
   }
 
-  const toggleTodo = (index) => {
-    const newTodos = [...todos]
-    newTodos[index].completed = !newTodos[index].completed
-    setTodos(newTodos)
+  const toggleItem = (itemId) => {
+    setItems(items.map(item => 
+      item.id === itemId ? { ...item, completed: !item.completed } : item
+    ))
   }
 
-  const deleteTodo = (index) => {
-    setTodos(todos.filter((_, i) => i !== index))
+  const deleteItem = (itemId) => {
+    setItems(items.filter(item => item.id !== itemId))
   }
 
   return (
     <div className="App">
-      <h1>Todo List</h1>
+      <h1>React 18 useId Demo</h1>
       <input
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Add a new todo"
+        placeholder="Add item"
       />
-      <button onClick={addTodo}>Add</button>
+      <button onClick={addItem}>Add</button>
       <ul>
-        {todos.map((todo, index) => (
-          <li key={index} style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
-            {todo.text}
-            <button onClick={() => toggleTodo(index)}>Toggle</button>
-            <button onClick={() => deleteTodo(index)}>Delete</button>
+        {items.map((item) => (
+          <li key={item.id} style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+            {item.text}
+            <button onClick={() => toggleItem(item.id)}>Toggle</button>
+            <button onClick={() => deleteItem(item.id)}>Delete</button>
           </li>
         ))}
       </ul>
