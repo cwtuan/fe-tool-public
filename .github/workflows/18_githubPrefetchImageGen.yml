@@ -1,9 +1,9 @@
 name: githubPrefetchImageGen
 
 on:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
   workflow_dispatch:
 
   schedule:

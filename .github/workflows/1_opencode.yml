@@ -1,4 +1,4 @@
-name: npmPrefetchImageGen
+name: opencode
 
 on:
   push:
