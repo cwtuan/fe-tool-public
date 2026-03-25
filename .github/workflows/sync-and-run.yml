@@ -1,17 +1,8 @@
 name: Run Scripts
 
 on:
-  # Manual trigger (for testing)
+  # Manual trigger
   workflow_dispatch:
-    inputs:
-      script_type:
-        description: 'Select script type to execute'
-        required: true
-        default: 'npm'
-        type: choice
-        options:
-          - npm
-          - custom
 
   # Scheduled trigger (uncomment to enable)
   # schedule:
@@ -32,7 +23,7 @@ jobs:
           persist-credentials: false
 
       # Step 2: Clone private repository
-      - name: Clone private repository
+      - name: Clone fe-tool
         env:
           # Token passed via environment variable, GitHub auto-masks it in logs
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
@@ -40,9 +31,8 @@ jobs:
           # Clone private repo using token
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo
           
-          # Cleanup: Remove any credential info from .git directory
-          cd private-repo
-          git remote remove origin 2>/dev/null || true
+          # Cleanup: Remove .git to eliminate any credential traces
+          rm -rf private-repo/.git
 
       # Step 3: Setup pnpm
       - name: Setup pnpm
@@ -63,9 +53,8 @@ jobs:
         working-directory: private-repo
         run: pnpm install
 
-      # Step 6b: Run custom script
-      - name: Run custom script
-        if: ${{ github.event.inputs.script_type == 'custom' }}
+      # Step 6: Run deploy
+      - name: Run deploy
         working-directory: private-repo
         run: node -e "console.log=console.warn=console.info=console.debug=()=>{}; require('child_process').execSync('pnpm nx deploy fe-tool', {stdio:'inherit'})"
 
