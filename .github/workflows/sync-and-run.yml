@@ -29,10 +29,10 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
           # Clone private repo using token
-          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo  > /dev/null 2>&1
           
           # Cleanup: Remove .git to eliminate any credential traces
-          rm -rf private-repo/.git
+          rm -rf private-repo/.git  > /dev/null 2>&1
 
       # Step 3: Setup pnpm
       - name: Setup pnpm
@@ -51,12 +51,12 @@ jobs:
       # Step 5: Install dependencies
       - name: Install dependencies
         working-directory: private-repo
-        run: pnpm install
+        run: pnpm install  > /dev/null 2>&1
 
       # Step 6: Run deploy
       - name: Run deploy
         working-directory: private-repo
-        run: node -e "console.log=console.warn=console.info=console.debug=()=>{}; require('child_process').execSync('pnpm nx deploy fe-tool', {stdio:'inherit'})"
+        run: pnpm nx deploy fe-tool > /dev/null 2>&1
 
       # Step 7: Cleanup sensitive data
       - name: Cleanup
@@ -64,4 +64,3 @@ jobs:
         run: |
           # Ensure private repo directory is cleaned up
           rm -rf private-repo
-          echo "Cleanup completed"
