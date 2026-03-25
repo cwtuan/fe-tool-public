@@ -35,6 +35,8 @@ jobs:
 
       - name: Authenticate GitHub CLI
         run: gh auth setup-git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install opencode-ai
         run: |
