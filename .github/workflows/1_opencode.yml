@@ -10,7 +10,7 @@ on:
     - cron:  '0 1 1 * *' # Run at 1:00 AM on the first day of every month
 
 jobs:
-  sync-and-build:
+  opencode:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -26,7 +26,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          cache: 'pnpm'
 
 
       - name: Install opencode-ai

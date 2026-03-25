@@ -10,7 +10,7 @@ on:
     - cron:  '00 20 * * *'
 
 jobs:
-  sync-and-build:
+  deploy-schedule-npm:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

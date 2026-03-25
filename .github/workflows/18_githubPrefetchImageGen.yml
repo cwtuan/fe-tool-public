@@ -10,7 +10,7 @@ on:
     - cron:  '0 18 * * *'
 
 jobs:
-  sync-and-build:
+  githubPrefetchImageGen:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
