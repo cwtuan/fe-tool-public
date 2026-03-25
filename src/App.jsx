@@ -1,46 +1,41 @@
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import './App.css'
 
+const ITEMS = Array.from({ length: 10000 }, (_, i) => `Item ${i + 1}`)
+
 function App() {
-  const [todos, setTodos] = useState([])
-  const [input, setInput] = useState('')
+  const [query, setQuery] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const [filteredItems, setFilteredItems] = useState(ITEMS)
 
-  const addTodo = () => {
-    if (input.trim()) {
-      setTodos([...todos, { text: input, completed: false }])
-      setInput('')
-    }
-  }
-
-  const toggleTodo = (index) => {
-    const newTodos = [...todos]
-    newTodos[index].completed = !newTodos[index].completed
-    setTodos(newTodos)
-  }
-
-  const deleteTodo = (index) => {
-    setTodos(todos.filter((_, i) => i !== index))
+  const handleSearch = (e) => {
+    const value = e.target.value
+    setQuery(value)
+    startTransition(() => {
+      const matches = ITEMS.filter(item => 
+        item.toLowerCase().includes(value.toLowerCase())
+      )
+      setFilteredItems(matches)
+    })
   }
 
   return (
     <div className="App">
-      <h1>Todo List</h1>
+      <h1>React useTransition Demo</h1>
+      <p>Search through 10,000 items (non-blocking update)</p>
       <input
         type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Add a new todo"
+        value={query}
+        onChange={handleSearch}
+        placeholder="Search items..."
       />
-      <button onClick={addTodo}>Add</button>
-      <ul>
-        {todos.map((todo, index) => (
-          <li key={index} style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
-            {todo.text}
-            <button onClick={() => toggleTodo(index)}>Toggle</button>
-            <button onClick={() => deleteTodo(index)}>Delete</button>
-          </li>
+      {isPending && <p>Updating...</p>}
+      <ul style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        {filteredItems.slice(0, 100).map((item, index) => (
+          <li key={index}>{item}</li>
         ))}
       </ul>
+      <p>Showing {Math.min(filteredItems.length, 100)} of {filteredItems.length} results</p>
     </div>
   )
 }
