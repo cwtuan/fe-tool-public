@@ -25,7 +25,11 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo  > /dev/null 2>&1
-          rm -rf private-repo/.git  > /dev/null 2>&1
+          cd private-repo
+          git remote remove origin
+          git config --unset http.https://github.com/.extraheader
+          rm -rf .git  > /dev/null 2>&1
+          cd ..
 
       # Step 3
       - name: Setup pnpm
