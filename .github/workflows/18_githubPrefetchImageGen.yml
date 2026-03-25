@@ -1,10 +1,10 @@
-name: Run Scripts
+name: githubPrefetchImageGen
 
 on:
   workflow_dispatch:
 
   schedule:
-    - cron:  '30 18 * * *'
+    - cron:  '0 18 * * *'
 
 jobs:
   sync-and-build:
@@ -21,7 +21,6 @@ jobs:
       # Step 2
       - name: Clone fe-tool
         env:
-          # Token passed via environment variable, GitHub auto-masks it in logs
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo  > /dev/null 2>&1
@@ -41,15 +40,27 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: private-repo/pnpm-lock.yaml
 
+
+      - name: Install canvas dependencies
+        run: |
+          sudo apt-get update   > /dev/null 2>&1
+          sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev   > /dev/null 2>&1
+
+
       # Step 5
       - name: Install dependencies
         working-directory: private-repo
         run: pnpm install  > /dev/null 2>&1
 
       # Step 6
-      - name: deploy npm-compare
+      - name: Rebuild canvas with npm (pnpm to skip building canvas in pnpm-workspace.yaml)
         working-directory: private-repo
-        run: pnpm nx deploy npm-compare  > /dev/null 2>&1
+        run: npm rebuild canvas   > /dev/null 2>&1
+
+
+      - name: githubPrefetchImageGen
+        working-directory: private-repo
+        run: run: node tool/githubPrefetchImageGen.js   > /dev/null 2>&1
 
       # Step 7
       - name: Cleanup

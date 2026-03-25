@@ -1,0 +1,57 @@
+name: deploy-schedule-npm
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron:  '00 20 * * *'
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # Step 1
+      - name: Checkout public repo
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # Step 2
+      - name: Clone fe-tool
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo  > /dev/null 2>&1
+          rm -rf private-repo/.git
+
+      # Step 3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Step 4
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: private-repo/pnpm-lock.yaml
+
+      # Step 5
+      - name: Install dependencies
+        working-directory: private-repo
+        run: pnpm install  > /dev/null 2>&1
+
+      # Step 6
+      - name: deploy npm-compare
+        working-directory: private-repo
+        run: pnpm nx deploy npm-compare  > /dev/null 2>&1
+
+      # Step 7
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf private-repo
