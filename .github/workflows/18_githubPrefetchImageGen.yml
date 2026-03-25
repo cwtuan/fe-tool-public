@@ -1,6 +1,9 @@
 name: githubPrefetchImageGen
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
 
   schedule:
@@ -60,7 +63,7 @@ jobs:
 
       - name: githubPrefetchImageGen
         working-directory: private-repo
-        run: run: node tool/githubPrefetchImageGen.js   > /dev/null 2>&1
+        run: node tool/githubPrefetchImageGen.js   > /dev/null 2>&1
 
       # Step 7
       - name: Cleanup
