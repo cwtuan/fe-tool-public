@@ -18,7 +18,7 @@ jobs:
     steps:
       # Step 1: Checkout current public repo (optional, if public repo files needed)
       - name: Checkout public repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -28,10 +28,7 @@ jobs:
           # Token passed via environment variable, GitHub auto-masks it in logs
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
-          # Clone private repo using token
           git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/cwtuan/fe-tool.git" private-repo  > /dev/null 2>&1
-          
-          # Cleanup: Remove .git to eliminate any credential traces
           rm -rf private-repo/.git  > /dev/null 2>&1
 
       # Step 3: Setup pnpm
@@ -42,7 +39,7 @@ jobs:
 
       # Step 4: Setup Node.js environment
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -54,13 +51,12 @@ jobs:
         run: pnpm install  > /dev/null 2>&1
 
       # Step 6: Run deploy
-      - name: Run deploy
+      - name: deploy npm-compare
         working-directory: private-repo
-        run: pnpm nx deploy fe-tool > /dev/null 2>&1
+        run: pnpm nx deploy npm-compare > /dev/null 2>&1
 
       # Step 7: Cleanup sensitive data
       - name: Cleanup
         if: always()
         run: |
-          # Ensure private repo directory is cleaned up
           rm -rf private-repo
