@@ -53,7 +53,7 @@ jobs:
       # Step 6: Run deploy
       - name: deploy npm-compare
         working-directory: private-repo
-        run: pnpm nx deploy npm-compare > /dev/null 2>&1
+        run: pnpm nx deploy npm-compare
 
       # Step 7: Cleanup sensitive data
       - name: Cleanup
