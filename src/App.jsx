@@ -1,45 +1,44 @@
-import { useState, useId } from 'react'
+import { useState, use } from 'react'
 import './App.css'
 
 function App() {
-  const [items, setItems] = useState([])
-  const [input, setInput] = useState('')
-  const id = useId()
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const addItem = () => {
-    if (input.trim()) {
-      setItems([...items, { id: `${id}-${Date.now()}`, text: input, completed: false }])
-      setInput('')
-    }
+  const fetchData = () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          message: 'Hello from React 19 use() hook!',
+          timestamp: new Date().toLocaleTimeString(),
+          features: ['Read promises in render', 'Read context directly', 'Cleaner async patterns']
+        })
+      }, 1000)
+    })
   }
 
-  const toggleItem = (itemId) => {
-    setItems(items.map(item => 
-      item.id === itemId ? { ...item, completed: !item.completed } : item
-    ))
-  }
-
-  const deleteItem = (itemId) => {
-    setItems(items.filter(item => item.id !== itemId))
-  }
+  const dataPromise = fetchData()
 
   return (
     <div className="App">
-      <h1>React 18 useId Demo</h1>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Add item"
-      />
-      <button onClick={addItem}>Add</button>
+      <h1>React 19 use() Hook Demo</h1>
+      <Message promise={dataPromise} />
+      <button onClick={() => setRefreshKey(k => k + 1)}>
+        Refresh
+      </button>
+    </div>
+  )
+}
+
+function Message({ promise }) {
+  const data = use(promise)
+  
+  return (
+    <div>
+      <p>{data.message}</p>
+      <p>Time: {data.timestamp}</p>
       <ul>
-        {items.map((item) => (
-          <li key={item.id} style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
-            {item.text}
-            <button onClick={() => toggleItem(item.id)}>Toggle</button>
-            <button onClick={() => deleteItem(item.id)}>Delete</button>
-          </li>
+        {data.features.map((feature, i) => (
+          <li key={i}>{feature}</li>
         ))}
       </ul>
     </div>
