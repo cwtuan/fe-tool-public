@@ -1,46 +1,50 @@
-import { useState, use } from 'react'
+import { useState, useId, useTransition } from 'react'
 import './App.css'
 
 function App() {
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [query, setQuery] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const id = useId()
 
-  const fetchData = () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          message: 'Hello from React 19 use() hook!',
-          timestamp: new Date().toLocaleTimeString(),
-          features: ['Read promises in render', 'Read context directly', 'Cleaner async patterns']
-        })
-      }, 1000)
+  const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
+
+  const filteredItems = items.filter(item =>
+    item.toLowerCase().includes(query.toLowerCase())
+  )
+
+  const handleChange = (e) => {
+    startTransition(() => {
+      setQuery(e.target.value)
     })
   }
 
-  const dataPromise = fetchData()
-
   return (
     <div className="App">
-      <h1>React 19 use() Hook Demo</h1>
-      <Message promise={dataPromise} />
-      <button onClick={() => setRefreshKey(k => k + 1)}>
-        Refresh
-      </button>
-    </div>
-  )
-}
-
-function Message({ promise }) {
-  const data = use(promise)
-  
-  return (
-    <div>
-      <p>{data.message}</p>
-      <p>Time: {data.timestamp}</p>
-      <ul>
-        {data.features.map((feature, i) => (
-          <li key={i}>{feature}</li>
-        ))}
-      </ul>
+      <h1>React 18 Features Demo</h1>
+      <div>
+        <label htmlFor={id}>Search items: </label>
+        <input
+          id={id}
+          type="text"
+          value={query}
+          onChange={handleChange}
+          placeholder="Type to filter..."
+        />
+        <label htmlFor={`${id}-checkbox`} style={{ marginLeft: '20px' }}>
+          <input id={`${id}-checkbox`} type="checkbox" />
+          Option {id}
+        </label>
+      </div>
+      {isPending ? (
+        <p>Loading...</p>
+      ) : (
+        <ul style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          {filteredItems.slice(0, 50).map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      )}
+      <p>Total matches: {filteredItems.length}</p>
     </div>
   )
 }
