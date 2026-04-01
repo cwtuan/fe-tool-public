@@ -1,35 +1,32 @@
 import { useState, use } from 'react'
 import './App.css'
 
+const ThemeContext = React.createContext('light')
+
 function App() {
-  const [refreshKey, setRefreshKey] = useState(0)
-
-  const fetchData = () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          message: 'Hello from React 19 use() hook!',
-          timestamp: new Date().toLocaleTimeString(),
-          features: ['Read promises in render', 'Read context directly', 'Cleaner async patterns']
-        })
-      }, 1000)
-    })
-  }
-
-  const dataPromise = fetchData()
+  const [theme, setTheme] = useState('light')
 
   return (
-    <div className="App">
-      <h1>React 19 use() Hook Demo</h1>
-      <Message promise={dataPromise} />
-      <button onClick={() => setRefreshKey(k => k + 1)}>
-        Refresh
-      </button>
-    </div>
+    <ThemeContext.Provider value={theme}>
+      <div className="App">
+        <h1>React 19 use() Hook Demo</h1>
+        <ThemeDisplay />
+        <Greeting promise={fetchData()} />
+        <div>
+          <button onClick={() => setTheme('light')}>Light</button>
+          <button onClick={() => setTheme('dark')}>Dark</button>
+        </div>
+      </div>
+    </ThemeContext.Provider>
   )
 }
 
-function Message({ promise }) {
+function ThemeDisplay() {
+  const theme = use(ThemeContext)
+  return <p>Current theme via use(): {theme}</p>
+}
+
+function Greeting({ promise }) {
   const data = use(promise)
   
   return (
@@ -43,6 +40,18 @@ function Message({ promise }) {
       </ul>
     </div>
   )
+}
+
+const fetchData = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        message: 'Hello from React 19 use() hook!',
+        timestamp: new Date().toLocaleTimeString(),
+        features: ['Read promises in render', 'Read context with use()', 'New concurrent features']
+      })
+    }, 500)
+  })
 }
 
 export default App
