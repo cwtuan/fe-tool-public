@@ -1,84 +1,56 @@
-import { useState, useId, useTransition, use } from 'react'
+import { useState, useOptimistic, useActionState } from 'react'
 import './App.css'
 
-function ResourceDisplay({ resource }) {
-  const data = use(resource)
-  return <p>Loaded: {data}</p>
+function ItemList({ items }) {
+  return (
+    <ul>
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
+      ))}
+    </ul>
+  )
 }
 
-function createResource(value) {
-  let status = 'pending'
-  let result
-  const promise = new Promise((resolve) =>
-    setTimeout(() => {
-      status = 'success'
-      result = `Data for "${value}" fetched at ${new Date().toLocaleTimeString()}`
-      resolve()
-    }, 500)
-  )
-  return {
-    read() {
-      if (status === 'pending') throw promise
-      if (status === 'success') return result
-    }
+async function addItemAction(prevState, formData) {
+  await new Promise(r => setTimeout(r, 500))
+  const item = formData.get('item')
+  if (!item || !item.trim()) {
+    return { error: 'Item cannot be empty', items: prevState.items }
   }
+  return { error: null, items: [...prevState.items, item] }
 }
 
 function App() {
-  const [query, setQuery] = useState('')
-  const [isPending, startTransition] = useTransition()
-  const id = useId()
-  const [resource, setResource] = useState(null)
-
-  const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
-
-  const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(query.toLowerCase())
+  const [state, formAction] = useActionState(addItemAction, { error: null, items: [] })
+  const [optimisticItems, addOptimistic] = useOptimistic(
+    state.items,
+    (state, newItem) => [...state, newItem]
   )
 
-  const handleChange = (e) => {
-    startTransition(() => {
-      setQuery(e.target.value)
-    })
-  }
+  const [inputValue, setInputValue] = useState('')
 
-  const handleFetch = () => {
-    startTransition(() => {
-      setResource(createResource(query || 'default'))
-    })
+  const handleSubmit = async (formData) => {
+    const item = formData.get('item')
+    if (item?.trim()) {
+      addOptimistic(item)
+    }
+    setInputValue('')
   }
 
   return (
     <div className="App">
-      <h1>React 19 Features Demo</h1>
-      <div>
-        <label htmlFor={id}>Search items: </label>
+      <h1>React 19 Simple Demo</h1>
+      <form action={formAction} onSubmit={e => { e.preventDefault(); handleSubmit(new FormData(e.target)) }}>
         <input
-          id={id}
-          type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder="Type to filter..."
+          name="item"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder="Add an item..."
         />
-        <button onClick={handleFetch} style={{ marginLeft: '10px' }}>
-          Fetch Data
-        </button>
-        <label htmlFor={`${id}-checkbox`} style={{ marginLeft: '20px' }}>
-          <input id={`${id}-checkbox`} type="checkbox" />
-          Option {id}
-        </label>
-      </div>
-      {isPending ? (
-        <p>Loading...</p>
-      ) : (
-        <ul style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          {filteredItems.slice(0, 50).map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      )}
-      <p>Total matches: {filteredItems.length}</p>
-      {resource && <ResourceDisplay resource={resource} />}
+        <button type="submit">Add</button>
+      </form>
+      {state.error && <p style={{ color: 'red' }}>{state.error}</p>}
+      <ItemList items={optimisticItems} />
     </div>
   )
 }
