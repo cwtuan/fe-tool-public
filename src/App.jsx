@@ -1,84 +1,57 @@
-import { useState, useId, useTransition, use } from 'react'
+import { useState, useId, useTransition, use, Suspense, useMemo } from 'react'
 import './App.css'
 
-function ResourceDisplay({ resource }) {
-  const data = use(resource)
-  return <p>Loaded: {data}</p>
-}
-
-function createResource(value) {
-  let status = 'pending'
-  let result
-  const promise = new Promise((resolve) =>
-    setTimeout(() => {
-      status = 'success'
-      result = `Data for "${value}" fetched at ${new Date().toLocaleTimeString()}`
-      resolve()
-    }, 500)
+function DataFetcher({ query }) {
+  const dataPromise = useMemo(
+    () => new Promise(resolve =>
+      setTimeout(() =>
+        resolve(`Result for "${query}" — ${new Date().toLocaleTimeString()}`),
+        1000
+      )
+    ),
+    [query]
   )
-  return {
-    read() {
-      if (status === 'pending') throw promise
-      if (status === 'success') return result
-    }
-  }
+  const data = use(dataPromise)
+  return <p>{data}</p>
 }
 
 function App() {
+  const [count, setCount] = useState(0)
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
   const id = useId()
-  const [resource, setResource] = useState(null)
+  const [fetchKey, setFetchKey] = useState(0)
 
-  const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
-
-  const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(query.toLowerCase())
-  )
-
-  const handleChange = (e) => {
-    startTransition(() => {
-      setQuery(e.target.value)
-    })
-  }
-
-  const handleFetch = () => {
-    startTransition(() => {
-      setResource(createResource(query || 'default'))
-    })
-  }
+  const items = ['Apple', 'Banana', 'Cherry', 'Date', 'Elderberry', 'Fig', 'Grape']
+  const filtered = items.filter(i => i.toLowerCase().includes(query.toLowerCase()))
 
   return (
     <div className="App">
-      <h1>React 19 Features Demo</h1>
-      <div>
-        <label htmlFor={id}>Search items: </label>
-        <input
-          id={id}
-          type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder="Type to filter..."
-        />
-        <button onClick={handleFetch} style={{ marginLeft: '10px' }}>
-          Fetch Data
-        </button>
-        <label htmlFor={`${id}-checkbox`} style={{ marginLeft: '20px' }}>
-          <input id={`${id}-checkbox`} type="checkbox" />
-          Option {id}
-        </label>
-      </div>
-      {isPending ? (
-        <p>Loading...</p>
-      ) : (
-        <ul style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          {filteredItems.slice(0, 50).map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
+      <h1>React 19 Demo</h1>
+
+      <label htmlFor={id}>Search: </label>
+      <input
+        id={id}
+        value={query}
+        onChange={e => startTransition(() => setQuery(e.target.value))}
+      />
+
+      {isPending ? <p>Filtering...</p> : (
+        <ul>{filtered.map(i => <li key={i}>{i}</li>)}</ul>
       )}
-      <p>Total matches: {filteredItems.length}</p>
-      {resource && <ResourceDisplay resource={resource} />}
+
+      <p>
+        Count: {count}
+        <button onClick={() => setCount(c => c + 1)}>+</button>
+      </p>
+
+      <button onClick={() => startTransition(() => setFetchKey(k => k + 1))}>
+        Fetch with use()
+      </button>
+
+      <Suspense fallback={<p>Loading data...</p>}>
+        <DataFetcher key={fetchKey} query={query || 'default'} />
+      </Suspense>
     </div>
   )
 }
