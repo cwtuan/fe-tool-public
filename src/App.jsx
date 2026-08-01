@@ -1,84 +1,43 @@
-import { useState, useId, useTransition, use } from 'react'
+import { useActionState } from 'react'
 import './App.css'
 
-function ResourceDisplay({ resource }) {
-  const data = use(resource)
-  return <p>Loaded: {data}</p>
-}
-
-function createResource(value) {
-  let status = 'pending'
-  let result
-  const promise = new Promise((resolve) =>
-    setTimeout(() => {
-      status = 'success'
-      result = `Data for "${value}" fetched at ${new Date().toLocaleTimeString()}`
-      resolve()
-    }, 500)
-  )
+async function addMessage(prevState, formData) {
+  const message = formData.get('message')
+  await new Promise((resolve) => setTimeout(resolve, 800))
   return {
-    read() {
-      if (status === 'pending') throw promise
-      if (status === 'success') return result
-    }
+    messages: [...(prevState.messages ?? []), message],
+    error: null,
   }
 }
 
 function App() {
-  const [query, setQuery] = useState('')
-  const [isPending, startTransition] = useTransition()
-  const id = useId()
-  const [resource, setResource] = useState(null)
-
-  const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
-
-  const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(query.toLowerCase())
-  )
-
-  const handleChange = (e) => {
-    startTransition(() => {
-      setQuery(e.target.value)
-    })
-  }
-
-  const handleFetch = () => {
-    startTransition(() => {
-      setResource(createResource(query || 'default'))
-    })
-  }
+  const [state, formAction, isPending] = useActionState(addMessage, { messages: [] })
 
   return (
     <div className="App">
-      <h1>React 19 Features Demo</h1>
-      <div>
-        <label htmlFor={id}>Search items: </label>
+      <h1>React 19 Form Actions Demo</h1>
+      <p>
+        Uses <code>useActionState</code> with a <code>&lt;form&gt;</code> action.
+      </p>
+      <form action={formAction}>
         <input
-          id={id}
+          name="message"
           type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder="Type to filter..."
+          placeholder="Type a message..."
+          required
+          aria-label="Message"
         />
-        <button onClick={handleFetch} style={{ marginLeft: '10px' }}>
-          Fetch Data
+        <button type="submit" disabled={isPending} style={{ marginLeft: '10px' }}>
+          {isPending ? 'Sending...' : 'Send'}
         </button>
-        <label htmlFor={`${id}-checkbox`} style={{ marginLeft: '20px' }}>
-          <input id={`${id}-checkbox`} type="checkbox" />
-          Option {id}
-        </label>
-      </div>
-      {isPending ? (
-        <p>Loading...</p>
-      ) : (
-        <ul style={{ maxHeight: '300px', overflowY: 'auto' }}>
-          {filteredItems.slice(0, 50).map((item, i) => (
-            <li key={i}>{item}</li>
+      </form>
+      {state.messages.length > 0 && (
+        <ul style={{ textAlign: 'left', display: 'inline-block' }}>
+          {state.messages.map((message, i) => (
+            <li key={i}>{message}</li>
           ))}
         </ul>
       )}
-      <p>Total matches: {filteredItems.length}</p>
-      {resource && <ResourceDisplay resource={resource} />}
     </div>
   )
 }
