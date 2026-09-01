@@ -1,4 +1,4 @@
-import { useState, useId, useTransition, use } from 'react'
+import { useState, useId, useTransition, use, useOptimistic } from 'react'
 import './App.css'
 
 function ResourceDisplay({ resource }) {
@@ -22,6 +22,43 @@ function createResource(value) {
       if (status === 'success') return result
     }
   }
+}
+
+function TodoList() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: 'Learn React 19', done: false },
+    { id: 2, text: 'Try useOptimistic', done: false },
+  ])
+  const [optimisticTodos, addOptimisticTodo] = useOptimistic(
+    todos,
+    (state, newTodo) => [...state, { id: Date.now(), text: newTodo, done: false }]
+  )
+
+  const handleSubmit = async (formData) => {
+    const text = formData.get('todo')
+    if (!text) return
+    addOptimisticTodo(text)
+    await new Promise(r => setTimeout(r, 300))
+    setTodos(prev => [...prev, { id: Date.now(), text, done: false }])
+  }
+
+  return (
+    <div>
+      <h2>Todo List (useOptimistic)</h2>
+      <form action={handleSubmit}>
+        <input name="todo" placeholder="Add a todo..." />
+        <button type="submit">Add</button>
+      </form>
+      <ul>
+        {optimisticTodos.map(todo => (
+          <li key={todo.id}>
+            <input type="checkbox" defaultChecked={todo.done} />
+            {todo.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
 
 function App() {
@@ -79,6 +116,7 @@ function App() {
       )}
       <p>Total matches: {filteredItems.length}</p>
       {resource && <ResourceDisplay resource={resource} />}
+      <TodoList />
     </div>
   )
 }
