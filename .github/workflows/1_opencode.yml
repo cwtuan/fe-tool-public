@@ -1,0 +1,45 @@
+name: opencode
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron:  '0 1 1 * *' # Run at 1:00 AM on the first day of every month
+
+jobs:
+  opencode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+
+      - name: Checkout public repo
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install opencode-ai
+        run: |
+          npm i -g opencode-ai
+
+      - name: run opencode-ai
+        run: |
+          gh auth setup-git
+          opencode run "1. update src/App.jsx for new react feature simple demo 2. create a new branch and create a PR using gh cli such as `gh pr create`"
+        env:
+          GH_TOKEN: ${{ github.token }}
