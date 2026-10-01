@@ -1,34 +1,93 @@
-import { useState, useId, useTransition, use } from 'react'
+import {
+  useState,
+  useId,
+  useEffect,
+  useTransition,
+  useActionState,
+  useOptimistic,
+  use
+} from 'react'
 import './App.css'
 
-function ResourceDisplay({ resource }) {
-  const data = use(resource)
+function ResourceDisplay({ dataPromise }) {
+  const data = use(dataPromise)
   return <p>Loaded: {data}</p>
 }
 
 function createResource(value) {
-  let status = 'pending'
-  let result
-  const promise = new Promise((resolve) =>
-    setTimeout(() => {
-      status = 'success'
-      result = `Data for "${value}" fetched at ${new Date().toLocaleTimeString()}`
-      resolve()
-    }, 500)
+  return new Promise((resolve) =>
+    setTimeout(
+      () => resolve(`Data for "${value}" fetched at ${new Date().toLocaleTimeString()}`),
+      500
+    )
   )
-  return {
-    read() {
-      if (status === 'pending') throw promise
-      if (status === 'success') return result
-    }
+}
+
+let nextId = 0
+
+async function submitName(_previousState, formData) {
+  const name = formData.get('name')
+  await new Promise(resolve => setTimeout(resolve, 700))
+  if (!name) {
+    return { error: 'Name is required', entry: null }
   }
+  return { error: null, entry: { id: nextId++, label: `Hello, ${name}!` } }
+}
+
+function OptimisticForm() {
+  const [state, formAction, isPending] = useActionState(submitName, {
+    error: null,
+    entry: null
+  })
+  const [entries, setEntries] = useState([])
+  const [optimisticEntries, addOptimisticEntry] = useOptimistic(
+    entries,
+    (current, label) => [...current, { id: `optimistic-${label}`, label }]
+  )
+
+  useEffect(() => {
+    if (state.entry) {
+      setEntries(current => [...current, state.entry])
+    }
+  }, [state])
+
+  const handleSubmit = formData => {
+    const name = formData.get('name')
+    if (name) {
+      addOptimisticEntry(name)
+    }
+    formAction(formData)
+  }
+
+  const handleReset = () => setEntries([])
+
+  return (
+    <section>
+      <h2>useActionState + useOptimistic</h2>
+      <form action={handleSubmit}>
+        <input type="text" name="name" placeholder="Your name..." />
+        <button type="submit" disabled={isPending}>
+          {isPending ? 'Greeting...' : 'Greet'}
+        </button>
+        <button type="button" onClick={handleReset}>
+          Clear
+        </button>
+      </form>
+      {state.error && <p style={{ color: 'crimson' }}>{state.error}</p>}
+      <ul>
+        {optimisticEntries.map(entry => (
+          <li key={entry.id}>{entry.label}</li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 function App() {
   const [query, setQuery] = useState('')
   const [isPending, startTransition] = useTransition()
   const id = useId()
-  const [resource, setResource] = useState(null)
+  const [dataPromise, setDataPromise] = useState(null)
 
   const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
 
@@ -43,9 +102,7 @@ function App() {
   }
 
   const handleFetch = () => {
-    startTransition(() => {
-      setResource(createResource(query || 'default'))
-    })
+    setDataPromise(createResource(query || 'default'))
   }
 
   return (
@@ -78,7 +135,8 @@ function App() {
         </ul>
       )}
       <p>Total matches: {filteredItems.length}</p>
-      {resource && <ResourceDisplay resource={resource} />}
+      {dataPromise && <ResourceDisplay dataPromise={dataPromise} />}
+      <OptimisticForm />
     </div>
   )
 }
