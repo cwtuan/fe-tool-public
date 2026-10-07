@@ -1,0 +1,16 @@
+name: 安装 SOPS
+description: 下载并校验固定版本的 SOPS Linux 可执行文件，不访问业务凭据
+runs:
+  using: composite
+  steps:
+    - name: 下载并核对 SHA-256
+      shell: bash
+      run: |
+        set -euo pipefail
+        binary="$RUNNER_TEMP/sops-v3.13.3.linux.amd64"
+        curl --fail --silent --show-error --location \
+          'https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.linux.amd64' \
+          --output "$binary"
+        echo 'e5bec3346a873ae91d871550f3e698c1aad962aff462a080e40f25fde17fef6b  '"$binary" | sha256sum --check --status
+        install -m 0755 "$binary" "$RUNNER_TEMP/sops"
+        echo "$RUNNER_TEMP" >> "$GITHUB_PATH"

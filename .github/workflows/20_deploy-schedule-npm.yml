@@ -14,8 +14,10 @@ permissions:
 
 jobs:
   deploy-schedule-npm:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    if: github.ref == 'refs/heads/master'
+    environment: production-secrets
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
 
     steps:
       # Step 1
@@ -29,8 +31,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
         run: |
-          gh repo clone cwtuan/fe-tool private-repo -- --depth 1 > /dev/null 2>&1
-          rm -rf private-repo/.git
+          gh repo clone cwtuan/fe-tool private-repo -- --depth 1 --branch master --single-branch > /dev/null 2>&1
+          rm -rf private-repo/.git > /dev/null 2>&1
+
+      - uses: ./.github/actions/setup-sops
 
       # Step 3
       - name: Setup pnpm
@@ -42,22 +46,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
-          node-version: '24'
-          cache: 'pnpm'
-          cache-dependency-path: private-repo/pnpm-lock.yaml
+          node-version: '22'
+          package-manager-cache: false
 
       # Step 5
       - name: Install dependencies
         working-directory: private-repo
-        run: pnpm install  > /dev/null 2>&1
+        run: pnpm install --frozen-lockfile  > /dev/null 2>&1
 
       # Step 6
       - name: deploy npm-compare
         working-directory: private-repo
-        run: pnpm nx deploy npm-compare  > /dev/null 2>&1
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+        run: pnpm run npm-compare:deploy  > /dev/null 2>&1
 
       # Step 7
       - name: Cleanup
         if: always()
         run: |
-          rm -rf private-repo
+          rm -rf private-repo > /dev/null 2>&1
